@@ -14,7 +14,7 @@ def integra_mc(fun, a, b, num_puntos=10000):
         ranY = maxFuncion * np.random.random()
         if (ranY < fun(ranX)):
             porDebajo += 1
-    #return porDebajo/num_puntos*(b-a)*maxFuncion
+    resultado =  porDebajo/num_puntos*(b-a)*maxFuncion
     toc = time.process_time()
     return 1000*(toc-tic)
 
@@ -25,7 +25,7 @@ def fast_integra_mc(fun,a,b,num_puntos=10000):
     valoresY = maxFuncion * np.random.rand(num_puntos)
     valoresFuncion = func(valoresX)
     porDebajo = np.sum(valoresY<valoresFuncion)
-    #return porDebajo/num_puntos*(b-a)*maxFuncion
+    resultado = porDebajo/num_puntos*(b-a)*maxFuncion
     toc = time.process_time()
     return 1000 * (toc-tic)
 
