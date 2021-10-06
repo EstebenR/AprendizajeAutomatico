@@ -79,27 +79,36 @@ def coste_vectorizado(X, Y, Theta):
 
 def regresion_varias():
     datos = carga_csv("ex1data2.csv")
-    mat_norm, media, desv = normaliza_matriz(datos)
+    mat_norm, medias, desvs = normaliza_matriz(datos)
     X = mat_norm[:,:-1]
     Y = mat_norm[:,-1]
     m = np.shape(X)[0]
     X = np.hstack([np.ones([m,1]),X])
 
     plt.figure()
-    alpha = 0.3
-    Thetas, costes = descenso_gradiente(X,Y,alpha)
-    plt.scatter(np.arange(np.shape(costes)[0]),costes,c='red',label='alfa 0.3')
-    alpha = 0.1
-    Thetas, costes = descenso_gradiente(X,Y,alpha)
-    plt.scatter(np.arange(np.shape(costes)[0]),costes,c='blue',label='alfa 0.1')
-    alpha = 0.03
-    Thetas, costes = descenso_gradiente(X,Y,alpha)
-    plt.scatter(np.arange(np.shape(costes)[0]),costes,c='green',label='alfa 0.03')
+
     alpha = 0.01
     Thetas, costes = descenso_gradiente(X,Y,alpha)
     plt.scatter(np.arange(np.shape(costes)[0]),costes,c='orange',label='alfa 0.01')
+    alpha = 0.03
+    Thetas, costes = descenso_gradiente(X,Y,alpha)
+    plt.scatter(np.arange(np.shape(costes)[0]),costes,c='green',label='alfa 0.03')
+    alpha = 0.1
+    Thetas, costes = descenso_gradiente(X,Y,alpha)
+    plt.scatter(np.arange(np.shape(costes)[0]),costes,c='blue',label='alfa 0.1')
+    alpha = 0.3
+    Thetas, costes = descenso_gradiente(X,Y,alpha)
+    plt.scatter(np.arange(np.shape(costes)[0]),costes,c='red',label='alfa 0.3')
+    
     plt.legend()
     plt.savefig("Decenso gradiente")
+
+    #Probamos a predecir el precio de una casa de 1650 pies cuadrados y 3 habitaciones
+    #Primero normalizamos los valores para meterlos a la funcion
+    pies = (1650 - medias[0])/desvs[0]
+    habs = (3 - medias[1])/desvs[1]
+    precio = (Thetas[0]+Thetas[1]*pies+Thetas[2]*habs)*desvs[2]+medias[2]
+    print(f"Precio predecido para 1650 pies con 3 habitaciones con descenso de gradiente: {precio}")
 
 def descenso_gradiente(X, Y, alpha):
     Theta = np.zeros(np.shape(X)[1])
@@ -128,5 +137,23 @@ def gradiente2(X,Y,Theta, alpha):
     H = np.dot(X, Theta)
     return Theta - (alpha/m) * np.dot(np.transpose(X), (H-Y))
 
+def ec_normal(X,Y):
+    return np.dot(np.linalg.pinv(np.dot(np.transpose(X), X)),np.dot(np.transpose(X), Y))
+
+def resultado_normal():
+    datos = carga_csv("ex1data2.csv")
+    X = datos[:,:-1]
+    Y = datos[:,-1]
+    m = np.shape(X)[0]
+    X = np.hstack([np.ones([m,1]),X])
+    Thetas = ec_normal(X,Y)
+    pies = 1650
+    habs = 3
+    precio = (Thetas[0]+Thetas[1]*pies+Thetas[2]*habs)
+    print(f"Precio predecido para 1650 pies con 3 habitaciones con ecuacion normal: {precio}")
+
+
+
 #regresion_lineal()
 regresion_varias()
+resultado_normal()
