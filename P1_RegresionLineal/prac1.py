@@ -107,12 +107,12 @@ def descenso_gradiente(X, Y, alpha):
     costes = np.zeros(num_intentos)
     for i in range(num_intentos):
         costes[i] = coste_vectorizado(X,Y,Theta)
-        Aux = gradiente(X,Y,Theta,alpha)
+        Aux = gradiente2(X,Y,Theta,alpha)
         Theta = Aux
 
     return Theta,costes
 
-def gradiente(X,Y,Theta, alpha):
+def gradiente1(X,Y,Theta, alpha):
     NuevaTheta = Theta
     m = np.shape(X)[0]
     n = np.shape(X)[1]
@@ -122,6 +122,11 @@ def gradiente(X,Y,Theta, alpha):
         Aux_i = Aux * X[:, i]
         NuevaTheta[i] -= (alpha / m) * Aux_i.sum()
     return NuevaTheta
+
+def gradiente2(X,Y,Theta, alpha):
+    m = np.shape(X)[0]
+    H = np.dot(X, Theta)
+    return Theta - (alpha/m) * np.dot(np.transpose(X), (H-Y))
 
 #regresion_lineal()
 regresion_varias()
