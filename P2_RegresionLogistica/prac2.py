@@ -56,6 +56,9 @@ def pinta_frontera_recta(X,Y,Theta):
 	plt.savefig("frontera.png")
 	plt.close()
 
+def evaluacion(Theta,X,Y):
+	print(f"Porcentaje de valores que superan o igualan 0.5: {np.sum(sigmoide(np.dot(X,Theta))>=0.5)*100/np.shape(X)[0]}%")
+
 def regresion_logistica(datos):
 	X = datos[:,:-1]
 	Y = datos[:,-1]
@@ -71,6 +74,7 @@ def regresion_logistica(datos):
 	print(coste(theta_opt,X,Y))
 
 	pinta_frontera_recta(X,Y,theta_opt)
+	evaluacion(theta_opt,X,Y)
 
 
 #ver_datos(carga_csv("ex2data1.csv"))
