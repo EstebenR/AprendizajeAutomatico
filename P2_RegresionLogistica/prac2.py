@@ -57,7 +57,9 @@ def pinta_frontera_recta(X,Y,Theta):
 	plt.close()
 
 def evaluacion(Theta,X,Y):
-	print(f"Porcentaje de valores que superan o igualan 0.5: {np.sum(sigmoide(np.dot(X,Theta))>=0.5)*100/np.shape(X)[0]}%")
+	acertados = np.sum((sigmoide(np.dot(X,Theta))>=0.5)==Y)
+	print(f"Porcentaje de valores que han sido correctamente clasificados: {acertados*100/np.shape(X)[0]}%")
+	#print(f"Porcentaje de valores que superan o igualan 0.5: {np.sum(sigmoide(np.dot(X,Theta))>=0.5)*100/np.shape(X)[0]}%")
 
 def regresion_logistica(datos):
 	X = datos[:,:-1]
