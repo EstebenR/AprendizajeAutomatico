@@ -41,14 +41,20 @@ def pinta_frontera_recta(X,Y,Theta):
 	punto1 = Theta[0]+Theta[1]*x1_min+Theta[2]*x1_max
 	punto2 = Theta[0]+Theta[1]*x1_max+Theta[2]*x2_min
 
-	print(punto1)
-	print(punto2)
-	
-	plt.plot([x1_min, punto1], [x1_max,punto2])
-
 	plt.scatter(X[pos,1],X[pos,2],marker='+',c='k')
 	plt.scatter(X[pos2,1],X[pos2,2],c='orange')
-	plt.show()
+	# plt.show()
+
+	xx1, xx2 = np.meshgrid(np.linspace(x1_min, x1_max),np.linspace(x2_min, x2_max))
+    
+	h = sigmoide(np.c_[np.ones((xx1.ravel().shape[0], 1)),xx1.ravel(), xx2.ravel()].dot(Theta))
+	h = h.reshape(xx1.shape)
+    
+    # el cuarto parámetro es el valor de z cuya frontera se
+    # quiere pintar
+	plt.contour(xx1, xx2, h, [0.5], linewidths=1, colors='b')
+	plt.savefig("frontera.png")
+	plt.close()
 
 def regresion_logistica(datos):
 	X = datos[:,:-1]
