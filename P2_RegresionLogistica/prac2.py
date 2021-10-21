@@ -2,6 +2,7 @@ import numpy as np
 from pandas.io.parsers import read_csv
 import matplotlib.pyplot as plt
 from scipy.optimize import fmin_tnc
+from sklearn.preprocessing import PolynomialFeatures
 
 def carga_csv(file_name):
 	valores = read_csv(file_name,header=None).to_numpy()
@@ -14,12 +15,12 @@ def ver_datos(X,Y):
 
 	plt.scatter(X[pos,0],X[pos,1],marker='+',c='k')
 	plt.scatter(X[pos2,0],X[pos2,1],c='orange')
-	plt.savefig("regresionLogistica.png")
+	#plt.savefig("regresionLogisticaRegularizada.png")
 
 def sigmoide(zeta):
 	return 1 / (1+np.exp(-zeta))
 
-def coste(Theta,X,Y):
+def costeLineal(Theta,X,Y):
 	m = np.shape(X)[0]
 	H = np.dot(X,Theta)
 	
@@ -37,9 +38,6 @@ def pinta_frontera_recta(X,Y,Theta):
 
 	x1_min,x1_max = X[:,1].min(), X[:,1].max()
 	x2_min,x2_max = X[:,2].min(), X[:,2].max()
-
-	punto1 = Theta[0]+Theta[1]*x1_min+Theta[2]*x1_max
-	punto2 = Theta[0]+Theta[1]*x1_max+Theta[2]*x2_min
 
 	plt.scatter(X[pos,1],X[pos,2],marker='+',c='k')
 	plt.scatter(X[pos2,1],X[pos2,2],c='orange')
@@ -69,15 +67,73 @@ def regresion_logistica(datos):
 
 	Theta = np.zeros(np.shape(X)[1])
 
-	result = fmin_tnc(func=coste,x0=Theta,fprime=gradiente,args=(X,Y),messages=0)
+	result = fmin_tnc(func=costeLineal,x0=Theta,fprime=gradiente,args=(X,Y),messages=0)
 	theta_opt = result[0]
-
+	print(result)
 	print(theta_opt)
-	print(coste(theta_opt,X,Y))
+	print(costeLineal(theta_opt,X,Y))
 
 	pinta_frontera_recta(X,Y,theta_opt)
 	evaluacion(theta_opt,X,Y)
 
+def costeRegularizada(Theta, X, Y, Lambda):
+	m = np.shape(X)[0]
+	return costeLineal(Theta, X, Y) + (Lambda/(2*m))*np.sum(Theta**2)
+
+def gradienteRegularizado(Theta,X,Y,Lambda):
+	m = np.shape(X)[0]
+	# j0 = gradiente(Theta[:1],X[:,:1],Y)
+	# j = gradiente(Theta[1:],X[:,1:],Y) + (Lambda/m) * Theta[1:]
+	# ret = np.hstack([j0,j])
+
+	grad = gradiente(Theta,X,Y)
+	grad_0 = grad[0]
+	j = grad + (Lambda/m)*Theta
+	j[0] = grad_0
+	return j
+
+def pinta_frontera_regularizada(X, Y, theta, poly,lam):	
+	pos = np.where(Y == 1)
+	pos2 = np.where(Y == 0)
+	
+	x1_min, x1_max = X[:, 0].min(), X[:, 0].max()
+	x2_min, x2_max = X[:, 1].min(), X[:, 1].max()
+
+	plt.scatter(X[pos,0],X[pos,1],marker='+',c='k')
+	plt.scatter(X[pos2,0],X[pos2,1],c='orange')
+
+	xx1, xx2 = np.meshgrid(np.linspace(x1_min, x1_max),np.linspace(x2_min, x2_max))
+
+	h = sigmoide(poly.fit_transform(np.c_[xx1.ravel(),
+	xx2.ravel()]).dot(theta))
+
+	h = h.reshape(xx1.shape)
+
+	plt.contour(xx1, xx2, h, [0.5], linewidths=1, colors='g')
+	plt.savefig(f"boundary{lam}.png")
+	plt.close()
+
+def regresion_logistica_regularizada(datos):
+	X = datos[:,:-1]
+	Y = datos[:,-1]
+	#ver_datos(X,Y)
+	
+	poly = PolynomialFeatures(6)
+	X_poly = poly.fit_transform(X)
+
+	Theta = np.zeros(np.shape(X_poly)[1])
+
+	print(costeRegularizada(Theta,X_poly,Y,1))
+
+	lambdas = np.arange(0,2,0.2)
+	for lam in lambdas:
+		result = fmin_tnc(func=costeRegularizada,x0=Theta,fprime=gradienteRegularizado,args=(X_poly,Y,lam),messages=0)
+		theta_opt = result[0]
+
+		plt.figure()
+		pinta_frontera_regularizada(X,Y,theta_opt,poly,lam)
+	
 
 #ver_datos(carga_csv("ex2data1.csv"))
-regresion_logistica(carga_csv("ex2data1.csv"))
+#regresion_logistica(carga_csv("ex2data1.csv"))
+regresion_logistica_regularizada(carga_csv("ex2data2.csv"))	
