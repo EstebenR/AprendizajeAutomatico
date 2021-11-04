@@ -43,9 +43,7 @@ def gradienteRegularizado(Theta,X,Y,Lambda):
 	j[0] = grad_0
 	return j
 
-def oneVsAll(X,y,num_etiquetas,reg):
-	X = np.hstack([np.ones([num_etiquetas,1]),X])
-
+def thetasOptimos(X,y,reg):
 	theta = np.zeros([10,np.shape(X)[1]])
 	for i in range(10):
 		if(i == 0):
@@ -53,26 +51,29 @@ def oneVsAll(X,y,num_etiquetas,reg):
 		else:
 			result = fmin_tnc(func=costeRegularizada,x0=theta[i],fprime=gradienteRegularizado,args=(X,(y==i)*1,reg),messages=0)
 		theta[i]=result[0]
+	return theta
 
-	evaluacion(X,y,theta)
+def oneVsAll(X,y,num_etiquetas,reg):
+	X = np.hstack([np.ones([num_etiquetas,1]),X])
 
-def evaluacion(X,y,theta):
+	theta = thetasOptimos(X,y,reg)
+
 	results = np.zeros([np.shape(X)[0],np.shape(theta)[0]])
 	for i in range(np.shape(theta)[0]):
 		results[:,i] = sigmoide(np.dot(X,theta[i]))
 
 	maxIndices = np.argmax(results,1)
+	evaluacion(maxIndices,y)
+
+def evaluacion(maxIndices,y):
 	acertados = np.sum(maxIndices==(y%10))
-	print(f"Porcentaje de valores que han sido correctamente clasificados: {acertados*100/np.shape(X)[0]}%")
+	print(f"Porcentaje de valores que han sido correctamente clasificados: {acertados*100/np.shape(maxIndices)[0]}%")
 
 def regresion():
 	X, y = loadData()
 	y = y[:,0]
 	m = np.shape(X)[0]
 	oneVsAll(X,y,m,0.1)
-	
-	
-
 
 regresion()
 	
