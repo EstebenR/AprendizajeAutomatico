@@ -21,15 +21,18 @@ def sigmoide(x):
 
 def propagacion():
 	X,y = loadData()
-	X = np.hstack([np.ones([np.shape(X)[0],1]),X])
+	m = np.shape(X)[0]
+	X = np.hstack([np.ones([m,1]),X])
 	theta1, theta2 = loadWeights()
 
-	zeta = np.apply_along_axis(np.dot,0,theta1,X)
-	alpha2 = sigmoide(zeta)
-	zeta3 = np.apply_along_axis(np.dot,0,theta2,alpha2)
-	alpha3 = sigmoide(zeta3)
-	maxIndices = np.argmax(alpha3)
-	acertados = np.sum(maxIndices==y)
+	Z2 = np.dot(X, theta1.T)
+	A2 = np.hstack([np.ones([m,1]),sigmoide(Z2)])
+	Z3 = np.dot(A2, theta2.T)
+	alpha3 = sigmoide(Z3)
+	maxIndices = np.argmax(alpha3,axis=1)
+	#Como maxIndices marca el indice, pero en matlab se indexa desde 1 hay que sumar uno al resultado de maxIndices para obtener el resultado correcto
+	maxIndices = maxIndices+1
+	acertados = np.sum(maxIndices==y.ravel())
 	print(f"Porcentaje de valores que han sido correctamente clasificados: {acertados*100/np.shape(alpha3)[0]}%")
 
 propagacion()
