@@ -2,8 +2,7 @@ from numpy.core.fromnumeric import shape
 from scipy.io import loadmat
 import numpy as np
 from matplotlib import pyplot as plt
-from scipy.optimize import fmin_tnc
-from scipy.optimize.optimize import OptimizeResult
+from scipy import optimize
 from displayData import *
 from checkNNGradients import checkNNGradients
 
@@ -38,14 +37,14 @@ def costeSinRegularizar(X,y, t1,t2):
 	m = np.shape(X)[0]
 	a1,a2,h = propagacion(X,t1,t2)
 	part1 = y*np.log(h)
-	part2 = (1-y)*np.log(1-h)
+	part2 = (1-y)*np.log(1-h+1e-9)
 	return (-1/m)*np.sum(part1+part2)
 
 def costeRegularizado(X,y, t1,t2, reg):
 	m = np.shape(X)[0]
 	
 	aux = costeSinRegularizar(X, y, t1, t2)
-	otra = (reg/(2*m)) * (np.sum(np.power(t1,2)) +np.sum(np.power(t2, 2)))
+	otra = (reg/(2*m)) * (np.sum(np.power(t1[1:],2)) +np.sum(np.power(t2[1:], 2)))
 	
 	return aux + otra
 
@@ -61,9 +60,9 @@ def resizeY(y,numLabels):
 	return y_onehot
 
 def terminoRegularizacion(gradiente, m, reg, theta):
-	columnaGuardada = gradiente[:,0]
+	columnaGuardada = gradiente[0]
 	gradiente = gradiente + (reg/m)*theta
-	gradiente[:,0] = columnaGuardada
+	gradiente[0] = columnaGuardada
 	return gradiente
 
 def backprop(params_rn, num_entradas, num_ocultas, num_etiquetas, X, y, reg):
@@ -95,18 +94,38 @@ def backprop(params_rn, num_entradas, num_ocultas, num_etiquetas, X, y, reg):
 	gradiente1 = terminoRegularizacion(gradiente1, m, reg,Theta1)
 	gradiente2 = terminoRegularizacion(gradiente2, m, reg,Theta2)
 
-	return (costeRegularizado(X,y,Theta1,Theta2,reg),np.concatenate([np.ravel(gradiente1),np.ravel(gradiente2)]))
-
-
+	return costeRegularizado(X,y,Theta1,Theta2,reg), np.concatenate([np.ravel(gradiente1),np.ravel(gradiente2)])
 
 def main():
-	X, y = loadData()
+	X, y_original = loadData()
 	T1, T2 = loadWeights() #Para comparar
 
-	y = resizeY(y.ravel(),10)
+	y = resizeY(y_original.ravel(),10)
 	params = np.concatenate([np.ravel(T1),np.ravel(T2)])
 	
-	cost, reg_param =backprop(params,np.shape(X)[1],25,10,X,y,1) 
-	checkNNGradients(cost,reg_param)
+	num_ocultas = 25
+	num_etiquetas = 10
+	num_entradas = np.shape(X)[1]
+	cost, reg_param = backprop(params,num_entradas,num_ocultas,num_etiquetas,X,y,1) 
+	checkNNGradients(backprop,1)
+
+	epsilon = 0.12
+	reg = 1
+	nIters = 70
+	pesos = np.random.uniform(-epsilon,epsilon, params.shape[0])
+	res = optimize.minimize(fun=backprop, x0=pesos, args=(np.shape(X)[1],num_ocultas,num_etiquetas,X,y,reg), jac = True, method = 'TNC', options={'maxiter':nIters})
+	
+	Theta1 = np.reshape(res.x[:num_ocultas * (num_entradas + 1)] , (num_ocultas, (num_entradas+1)))
+	Theta2 = np.reshape(res.x[num_ocultas * (num_entradas + 1):] , (num_etiquetas, (num_ocultas+1)))
+	
+	alpha3 = propagacion(X,Theta1,Theta2)[2]
+
+	maxIndices = np.argmax(alpha3,axis=1)
+	#Como maxIndices marca el indice, pero en matlab se indexa desde 1 hay que sumar uno al resultado de maxIndices para obtener el resultado correcto
+	maxIndices = maxIndices+1
+	print(np.shape(maxIndices))
+	print(np.shape(y_original.ravel()))
+	acertados = np.sum(maxIndices==y_original.ravel())
+	print(f"Porcentaje de valores que han sido correctamente clasificados: {acertados*100/np.shape(alpha3)[0]}%")
 
 main()
