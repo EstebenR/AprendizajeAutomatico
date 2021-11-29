@@ -19,12 +19,12 @@ def loadData():
 def costeRegularizado(Theta, X, Y, Lambda):
 	m = np.shape(X)[0]
 	H = np.dot(X,Theta)
-	return (np.sum((H-Y)**2))/(2*m) + (Lambda/(2*m))*np.sum(Theta[1:] **2)
+	return (np.sum((H-Y.T)**2))/(2*m) + (Lambda/(2*m))*np.sum(Theta[1:] **2)
 
 def gradiente(Theta,X,Y):
 	m = np.shape(X)[0]
 	H = np.dot(X,Theta)
-	return np.matmul(np.transpose(X),H-Y)/m
+	return np.dot(H-Y.T,X)/m
 
 def gradienteRegularizado(Theta,X,Y,Lambda):
 	m = np.shape(X)[0]
@@ -41,21 +41,21 @@ def all(theta, X, y, reg):
 def hipothesis(X,theta):
 	return np.sum(theta*X,1)
 
-def calculaError(X,y,theta, reg, Xval, Yval):
+def calculaError(X,y, reg, Xval, Yval):
 	m = np.shape(X)[0]
 	mValidacion = np.shape(Xval)[0]
 	errorValidacion = np.zeros([m])
 	errorEntrenamiento = np.zeros([m])
 	Xval = np.hstack([np.ones([mValidacion,1]),Xval])
-	print("---")
-	for i in range(1,m):
+	for i in range(1,m+1):
+		theta = np.zeros(np.shape(X)[1])
 		result = optimize.minimize(all, theta, args = (X[0:i], y[0:i,0], reg), jac = True, method = 'TNC')
-		errorEntrenamiento[i] = (np.sum((hipothesis(X[0:i],result.x)-y[0:i,0])**2))/(2*i)
-		errorValidacion[i] = (np.sum((hipothesis(Xval,result.x)-Yval[:,0])**2))/(2*mValidacion)
+		errorEntrenamiento[i-1] = costeRegularizado(result.x,X[0:i],y[0:i],reg)
+		errorValidacion[i-1] = costeRegularizado(result.x,Xval,Yval,reg)
 	
 	return errorEntrenamiento,errorValidacion
 
-def plotRegresionLineal(X, y, result):
+def plotRegresionLineal(X, y, result,mod=""):
 	plt.clf()
 	plt.plot(X[:,1],y,"x")
 
@@ -66,51 +66,72 @@ def plotRegresionLineal(X, y, result):
 	xvalsResultsMax = result.x[0]+result.x[1]*maxX
 
 	plt.plot([minX,maxX],[xvalsResultsMin,xvalsResultsMax])
-	plt.show()
+	plt.savefig("RegresionLineal"+mod)
+	plt.close()
 
-def plotError(eEntrenamiento,eValidacion):
+def plotRegresionPolinomial(X,y,result, medias, desviaciones, mod=""):
 	plt.clf()
-	eje = np.arange(1,np.shape(eEntrenamiento)[0])
-	plt.plot(eje,eEntrenamiento[1:])
-	plt.plot(eje,eValidacion[1:])
+	plt.plot(X[:,1],y,"x",  c = 'red')
 
+	lineX = np.arange(np.min(X),np.max(X),0.05)
+	aux_x = (nuevosDatos(lineX,8)-medias) / desviaciones
+	lineY = np.hstack([np.ones([len(aux_x),1]),aux_x]).dot(result.x)
+	plt.plot(lineX, lineY, '-', c = 'blue')	
+	
 	plt.show()
+	plt.savefig("RegresionLineal"+mod)
+	plt.close()
+
+def plotError(eEntrenamiento,eValidacion,mod=""):
+	plt.clf()
+	print(f"tam: {np.shape(eEntrenamiento)}")
+	print(eEntrenamiento)
+	plt.plot(np.linspace(1,11,12,dtype=int),eEntrenamiento,label="Entrenamiento")
+	plt.plot(np.linspace(1,11,12,dtype=int),eValidacion,label="Validacion")
+	plt.legend()
+
+	plt.savefig("ErrorValidacion"+mod)
+	plt.close()
 
 def nuevosDatos(X, p):
-	res = np.zeros([np.shape(X)[0], p])
-	res[:, 0] = X
-	for i in range(1, p):
-		res[:, i] = X**(i+1)
+	print(np.shape(X))
+	res = np.empty([np.shape(X)[0], p])
+	print(np.shape(res))
+	for i in range(p):
+		res[:, i] = (X**(i+1)).ravel()
 	return res
 
 def normaliza_matriz(mat):
-    medias = mat.mean(axis=0)
-    desviaciones = mat.std(axis=0) + 1e-7
-    mat_norm = (mat[:]-medias)/desviaciones
+    medias = np.mean(mat,axis=0)
+    desviaciones = np.std(mat,axis=0)
+    mat_norm = (mat - medias)/desviaciones
     return mat_norm, medias, desviaciones
 
 def main():
-	X,y, Xval, yval, XTest, yTest = loadData()
+	Xorig,y, Xval, yval, XTest, yTest = loadData()
 	reg = 0
-	m = np.shape(X)[0]
-	X = np.hstack([np.ones([m,1]),X])
+	m = np.shape(Xorig)[0]
 
+	X = np.hstack([np.ones([m,1]),Xorig])
+	
+	theta = np.array([[1],[1]])
+	result = optimize.minimize(all, theta, args = (X, y, reg), jac = True, method = 'TNC')
+	print(f"result : {result.x}")
+	plotRegresionLineal(X,y,result)
+	eEnt, eVal = calculaError(X,y, reg,Xval,yval)
+	plotError(eEnt,eVal)
 
-	Xextendido = nuevosDatos(X[:,1], 5)
-	Xextendido = np.hstack([np.ones([m,1]),Xextendido])
+	Xextendido = nuevosDatos(Xorig, 8)
 	XextendidoNor, medias, desviaciones = normaliza_matriz(Xextendido)
+	XextendidoNor = np.hstack([np.ones([np.shape(XextendidoNor)[0],1]),XextendidoNor])
 
-	print(np.shape(XextendidoNor),np.shape(medias), np.shape(desviaciones))
-
-	theta = np.array(np.shape(XextendidoNor))
-	result = optimize.minimize(all, theta, args = (XextendidoNor, y[:,0], reg), jac = True, method = 'TNC')
+	theta = np.zeros(np.shape(XextendidoNor[1]))
+	result = optimize.minimize(all, x0 = theta, args = (XextendidoNor, y, reg), jac = True, method = 'TNC')
 	print(result.x)
-	#theta = np.array([[1],[1]])
-	#print(costeRegularizado(theta,X,y,1))
-	#print(gradienteRegularizado(theta,X,y,1))
-	#result = optimize.minimize(all, theta, args = (X, y[:,0], reg), jac = True, method = 'TNC')
-	#plotRegresionLineal(X,y,result)
-	#eEnt, eVal = calculaError(X,y,theta, reg,Xval,yval)
-	#plotError(eEnt,eVal)
+	plotRegresionPolinomial(X,y,result,medias,desviaciones,"1")
+	
 
+
+
+	
 main()
