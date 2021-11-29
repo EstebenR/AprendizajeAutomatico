@@ -50,8 +50,8 @@ def calculaError(X,y, reg, Xval, Yval):
 	for i in range(1,m+1):
 		theta = np.zeros(np.shape(X)[1])
 		result = optimize.minimize(all, theta, args = (X[0:i], y[0:i,0], reg), jac = True, method = 'TNC')
-		errorEntrenamiento[i-1] = costeRegularizado(result.x,X[0:i],y[0:i],reg)
-		errorValidacion[i-1] = costeRegularizado(result.x,Xval,Yval,reg)
+		errorEntrenamiento[i-1] = costeRegularizado(result.x,X[0:i],y[0:i],0)
+		errorValidacion[i-1] = costeRegularizado(result.x,Xval,Yval,0)
 	
 	return errorEntrenamiento,errorValidacion
 
@@ -113,8 +113,50 @@ def normaliza_matriz(mat):
     mat_norm = (mat - medias)/desviaciones
     return mat_norm, medias, desviaciones
 
+def calculaErroresPolinomial(XextendidoNor,y,XvalPolinomial,yval):
+	eEntPoli, eValPoli = calculaError(XextendidoNor,y,0,XvalPolinomial,yval)
+	plotErrorPolinomial(eEntPoli,eValPoli,"0")
+
+	eEntPoli, eValPoli = calculaError(XextendidoNor,y,1,XvalPolinomial,yval)
+	plotErrorPolinomial(eEntPoli,eValPoli,"1")
+	
+	eEntPoli, eValPoli = calculaError(XextendidoNor,y,50,XvalPolinomial,yval)
+	plotErrorPolinomial(eEntPoli,eValPoli,"50")
+
+	eEntPoli, eValPoli = calculaError(XextendidoNor,y,100,XvalPolinomial,yval)
+	plotErrorPolinomial(eEntPoli,eValPoli,"100")
+
+def lambdasOptimos(XvalPolinomial, XextendidoNor, yval, y):
+	#Lambda optimo
+	lambdas = [0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10]
+	
+	errorValidacion = []
+	errorEntrenamiento = []
+	XvalPolinomial = np.hstack([np.ones([np.shape(XvalPolinomial)[0],1]),XvalPolinomial])
+	for i in lambdas:
+		theta = np.zeros(np.shape(XextendidoNor)[1])
+		result = optimize.minimize(all, theta, args = (XextendidoNor, y, i), jac = True, method = 'TNC')
+		errorEntrenamiento.append(costeRegularizado(result.x,XextendidoNor,y,0))
+		errorValidacion.append(costeRegularizado(result.x,XvalPolinomial,yval,0))
+
+	plt.clf()
+	plt.plot(lambdas,errorEntrenamiento,label="Entrenamiento")
+	plt.plot(lambdas,errorValidacion,label="Validacion")
+	plt.legend()
+	plt.savefig("PruebasLambdas")
+
+def errorConPrueba(theta, XextendidoNor, XTest,  y, yTest, medias, desviaciones):
+	result = optimize.minimize(all, theta, args = (XextendidoNor, y, 3), jac = True, method = 'TNC')
+
+	xTestPolinomial = nuevosDatos(XTest,8)
+	xTestPolinomial = (xTestPolinomial - medias) / desviaciones
+	xTestPolinomial = np.hstack([np.ones([np.shape(xTestPolinomial)[0],1]),xTestPolinomial])
+
+	error = costeRegularizado(result.x,xTestPolinomial,yTest,0)
+	print(error)
+
 def main():
-	Xorig,y, Xval, yval, XTest, yTest = loadData()
+	Xorig, y, Xval, yval, XTest, yTest = loadData()
 	reg = 0
 	m = np.shape(Xorig)[0]
 
@@ -141,15 +183,10 @@ def main():
 	XvalPolinomial = nuevosDatos(Xval,8)
 	XvalPolinomial = (XvalPolinomial-medias) / desviaciones
 
-	eEntPoli, eValPoli = calculaError(XextendidoNor,y,0,XvalPolinomial,yval)
-	plotErrorPolinomial(eEntPoli,eValPoli,"0")
+	calculaErroresPolinomial(XextendidoNor,y,XvalPolinomial,yval)
 
-	eEntPoli, eValPoli = calculaError(XextendidoNor,y,1,XvalPolinomial,yval)
-	plotErrorPolinomial(eEntPoli,eValPoli,"1")
+	lambdasOptimos(XvalPolinomial, XextendidoNor, yval, y)
 	
-	eEntPoli, eValPoli = calculaError(XextendidoNor,y,50,XvalPolinomial,yval)
-	plotErrorPolinomial(eEntPoli,eValPoli,"50")
+	errorConPrueba(theta, XextendidoNor, XTest, y, yTest, medias, desviaciones)
 
-	eEntPoli, eValPoli = calculaError(XextendidoNor,y,100,XvalPolinomial,yval)
-	plotErrorPolinomial(eEntPoli,eValPoli,"100")
 main()
