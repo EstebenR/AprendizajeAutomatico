@@ -78,19 +78,25 @@ def plotRegresionPolinomial(X,y,result, medias, desviaciones, mod=""):
 	lineY = np.hstack([np.ones([len(aux_x),1]),aux_x]).dot(result.x)
 	plt.plot(lineX, lineY, '-', c = 'blue')	
 	
-	plt.show()
 	plt.savefig("RegresionLineal"+mod)
 	plt.close()
 
 def plotError(eEntrenamiento,eValidacion,mod=""):
 	plt.clf()
-	print(f"tam: {np.shape(eEntrenamiento)}")
-	print(eEntrenamiento)
 	plt.plot(np.linspace(1,11,12,dtype=int),eEntrenamiento,label="Entrenamiento")
 	plt.plot(np.linspace(1,11,12,dtype=int),eValidacion,label="Validacion")
 	plt.legend()
 
 	plt.savefig("ErrorValidacion"+mod)
+	plt.close()
+
+def plotErrorPolinomial(eEntrenamiento,eValidacion,mod=""):
+	plt.clf()
+	plt.plot(np.linspace(1,12,12,dtype=int),eEntrenamiento,label="Entrenamiento")
+	plt.plot(np.linspace(1,12,12,dtype=int),eValidacion,label="Validacion")
+	plt.legend()
+
+	plt.savefig("ErrorValidacionPoli"+mod)
 	plt.close()
 
 def nuevosDatos(X, p):
@@ -121,6 +127,7 @@ def main():
 	eEnt, eVal = calculaError(X,y, reg,Xval,yval)
 	plotError(eEnt,eVal)
 
+	#Polinomial
 	Xextendido = nuevosDatos(Xorig, 8)
 	XextendidoNor, medias, desviaciones = normaliza_matriz(Xextendido)
 	XextendidoNor = np.hstack([np.ones([np.shape(XextendidoNor)[0],1]),XextendidoNor])
@@ -129,9 +136,20 @@ def main():
 	result = optimize.minimize(all, x0 = theta, args = (XextendidoNor, y, reg), jac = True, method = 'TNC')
 	print(result.x)
 	plotRegresionPolinomial(X,y,result,medias,desviaciones,"1")
+		
+
+	XvalPolinomial = nuevosDatos(Xval,8)
+	XvalPolinomial = (XvalPolinomial-medias) / desviaciones
+
+	eEntPoli, eValPoli = calculaError(XextendidoNor,y,0,XvalPolinomial,yval)
+	plotErrorPolinomial(eEntPoli,eValPoli,"0")
+
+	eEntPoli, eValPoli = calculaError(XextendidoNor,y,1,XvalPolinomial,yval)
+	plotErrorPolinomial(eEntPoli,eValPoli,"1")
 	
+	eEntPoli, eValPoli = calculaError(XextendidoNor,y,50,XvalPolinomial,yval)
+	plotErrorPolinomial(eEntPoli,eValPoli,"50")
 
-
-
-	
+	eEntPoli, eValPoli = calculaError(XextendidoNor,y,100,XvalPolinomial,yval)
+	plotErrorPolinomial(eEntPoli,eValPoli,"100")
 main()
