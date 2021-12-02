@@ -3,6 +3,8 @@ from sklearn.metrics import accuracy_score
 from scipy.io import loadmat
 import numpy as np
 from matplotlib import pyplot as plt
+from process_email import email2TokenList
+from get_vocab_dict import getVocabDict
 
 def loadData(num):
 	data = loadmat('ex6data'+str(num)+'.mat')
@@ -47,7 +49,7 @@ def entrenamiento(X,y,xVal,yVal,trainValues):
 
 	return svmOpt
 
-def main():
+def parte1():
 	X,y = loadData(1)
 	cVal = 1.0
 	svm = SVC(kernel='linear', C=cVal)
@@ -67,4 +69,11 @@ def main():
 	svmOpt = entrenamiento(X,y,xVal,yVal,trainValues)
 	visualize_boundary(X,y,svmOpt,"ParametrosOptimos.png")
 
-main()
+
+def parte2():
+	email_contents = open('spam/0001.txt' ,  'r', encoding='utf-8', errors='ignore').read()
+	email = email2TokenList(email_contents)
+	print(email)
+	vocab = getVocabDict()
+
+parte2()
