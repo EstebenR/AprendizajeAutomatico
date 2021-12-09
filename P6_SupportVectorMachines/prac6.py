@@ -69,11 +69,48 @@ def parte1():
 	svmOpt = entrenamiento(X,y,xVal,yVal,trainValues)
 	visualize_boundary(X,y,svmOpt,"ParametrosOptimos.png")
 
+def readEmails(folder, num, vocab):
+	email_contents = open(folder + "/" + str(num).zfill(4) + '.txt' ,  'r', encoding='utf-8', errors='ignore').read()
+	email = email2TokenList(email_contents)
+
+	mailVector =  np.zeros([len(vocab)])
+	for word in email:
+		if word in vocab:
+			mailVector[vocab[word]-1] = 1
+
+	return mailVector
+
+
+
+
 
 def parte2():
-	email_contents = open('spam/0001.txt' ,  'r', encoding='utf-8', errors='ignore').read()
-	email = email2TokenList(email_contents)
-	print(email)
 	vocab = getVocabDict()
+	
+	numSpam = 500
+	numEasyHam = 2551
+	numHardHam = 250
+
+	spamX = np.zeros([numSpam,len(vocab)])
+	for i in range (numSpam):
+		spamX[i] = readEmails("spam",i+1, vocab)
+	spamY = np.ones([numSpam])
+
+	easyHamX = np.zeros([numEasyHam,len(vocab)])
+	for i in range (numEasyHam):
+		easyHamX[i] = readEmails("easy_ham",i+1, vocab)
+	easyHamY = np.zeros([numEasyHam])
+
+	hardHamX = np.zeros([numHardHam,len(vocab)])
+	for i in range (numHardHam):
+		hardHamX[i] = readEmails("hard_ham",i+1, vocab)
+	hardHamY = np.zeros([numHardHam])
+
+	X = np.vstack((spamX, easyHamX, hardHamX))
+	Y = np.vstack((spamY, easyHamY, hardHamY))
+
+
+
+
 
 parte2()
