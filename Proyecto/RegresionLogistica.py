@@ -1,9 +1,6 @@
-from re import X
 import numpy as np
 from pandas.io.parsers import read_csv
-import matplotlib.pyplot as plt
 from scipy.optimize import fmin_tnc
-from sklearn.preprocessing import PolynomialFeatures
 
 categories = ["RP", "EC", "E", "ET", "T", "M", "A"]
 
@@ -105,6 +102,8 @@ def oneVsAll():
 
 	maxIndices = np.argmax(results, 1)
 	evaluacion(maxIndices, validateY, regOpt)
+
+	#TODO Grafica de lambd
 
 
 oneVsAll()
