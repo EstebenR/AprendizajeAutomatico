@@ -103,4 +103,6 @@ def main():
 	acertados = np.sum(maxIndices==np.where(Y[:] == 1))
 	print(f"Porcentaje de valores que han sido correctamente clasificados: {acertados*100/np.shape(alpha3)[0]:.3f}%")
 
+	#TODO probar varios regularizadores
+
 main()
