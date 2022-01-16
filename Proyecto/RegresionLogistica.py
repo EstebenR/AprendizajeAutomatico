@@ -2,11 +2,11 @@ import numpy as np
 from pandas.io.parsers import read_csv
 from scipy.optimize import fmin_tnc
 
-categories = ["RP", "EC", "E", "ET", "T", "M", "A"]
+categories = ["E", "ET", "T", "M"]
 
 
-def cargaDatos():
-	table = read_csv('Video_games_esrb_rating.csv', header=0,).to_numpy()
+def cargaDatos(file):
+	table = read_csv(file, header=0,).to_numpy()
 	X = table[:, 1:-1]
 	# Hay 7 tipos de ratings que vienen codificados con un string, asi que los codificamos como ints
 	Y = np.empty([np.shape(table)[0], 7])
@@ -51,8 +51,8 @@ def gradienteRegularizado(Theta, X, Y, Lambda):
 
 
 def thetasOptimos(X, y, reg):
-	theta = np.zeros([7, np.shape(X)[1]])
-	for i in range(7):
+	theta = np.zeros([len(categories), np.shape(X)[1]])
+	for i in range(len(categories)):
 		result = fmin_tnc(func=costeRegularizada, x0=theta[i], fprime=gradienteRegularizado, args=(
 			X, y[:, i], reg), messages=0)
 		theta[i] = result[0]
@@ -66,42 +66,42 @@ def evaluacion(maxIndices, Y, reg):
 
 
 def oneVsAll():
-	X, Y = cargaDatos()
+	X, Y = cargaDatos('Video_games_esrb_rating.csv')
+	testX, testY = cargaDatos('test_esrb.csv')
 	m = np.shape(X)[0]
 	X = np.hstack([np.ones([m, 1]), X])
+	testX = np.hstack([np.ones([np.shape(testX)[0], 1]), testX])
 
-	trainX = X[:int(m*0.6), :]
-	testX = X[int(m*0.6):int(m*0.8), :]
+	trainX = X[:int(m*0.8), :]
 	validateX = X[int(m*0.8):, :]
 
-	trainY = Y[:int(m*0.6), :]
-	testY = Y[int(m*0.6):int(m*0.8), :]
+	trainY = Y[:int(m*0.8), :]
 	validateY = Y[int(m*0.8):, :]
 
 	mejorAcertados = 0
 	regOpt = 0
 	thetasOpt = []
 
-	for reg in np.arange(0.1, 3, 0.1):
+	for reg in np.arange(0.01, 3, 0.01):
 		theta = thetasOptimos(trainX, trainY, reg)
 
-		results = np.zeros([np.shape(testX)[0], np.shape(theta)[0]])
+		results = np.zeros([np.shape(validateX)[0], np.shape(theta)[0]])
 		for i in range(np.shape(theta)[0]):
-			results[:, i] = sigmoide(np.dot(testX, theta[i]))
+			results[:, i] = sigmoide(np.dot(validateX, theta[i]))
 
 		maxIndices = np.argmax(results, 1)
-		acertados = np.sum(maxIndices == np.where(testY[:] == 1))
+		acertados = np.sum(maxIndices == np.where(validateY[:] == 1))
 		if(acertados > mejorAcertados):
 			regOpt = reg
 			thetasOpt = theta
 			mejorAcertados = acertados
 
-	results = np.zeros([np.shape(validateX)[0], np.shape(thetasOpt)[0]])
+	results = np.zeros([np.shape(testX)[0], np.shape(thetasOpt)[0]])
 	for i in range(np.shape(thetasOpt)[0]):
-		results[:, i] = sigmoide(np.dot(validateX, thetasOpt[i]))
+		results[:, i] = sigmoide(np.dot(testX, thetasOpt[i]))
 
 	maxIndices = np.argmax(results, 1)
-	evaluacion(maxIndices, validateY, regOpt)
+	evaluacion(maxIndices, testY, regOpt)
 
 	#TODO Grafica de lambd
 
