@@ -1,6 +1,9 @@
 import numpy as np
 from pandas.io.parsers import read_csv
 from scipy.optimize import fmin_tnc
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 
 categories = ["E", "ET", "T", "M"]
 
@@ -65,6 +68,15 @@ def evaluacion(maxIndices, Y, reg):
 		f"Porcentaje de valores que han sido correctamente clasificados: {acertados*100/np.shape(maxIndices)[0]:.3f}% con lambda = {reg}")
 
 
+def muestraGrafica(X, Y):
+	plt.figure()
+	plt.plot(X,Y,label="porcentaje de aciertos en validación")
+	plt.savefig("regresion.jpg")
+	plt.legend()
+	plt.show()
+	plt.close()
+
+
 def oneVsAll():
 	X, Y = cargaDatos('Video_games_esrb_rating.csv')
 	testX, testY = cargaDatos('test_esrb.csv')
@@ -79,10 +91,12 @@ def oneVsAll():
 	validateY = Y[int(m*0.8):, :]
 
 	mejorAcertados = 0
+	lambdas = np.arange(0.01,3,0.01)
+	aciertos = []
 	regOpt = 0
 	thetasOpt = []
 
-	for reg in np.arange(0.01, 3, 0.01):
+	for reg in lambdas:
 		theta = thetasOptimos(trainX, trainY, reg)
 
 		results = np.zeros([np.shape(validateX)[0], np.shape(theta)[0]])
@@ -91,6 +105,7 @@ def oneVsAll():
 
 		maxIndices = np.argmax(results, 1)
 		acertados = np.sum(maxIndices == np.where(validateY[:] == 1))
+		aciertos.append(acertados*100/np.shape(validateX)[0])
 		if(acertados > mejorAcertados):
 			regOpt = reg
 			thetasOpt = theta
@@ -103,7 +118,7 @@ def oneVsAll():
 	maxIndices = np.argmax(results, 1)
 	evaluacion(maxIndices, testY, regOpt)
 
-	#TODO Grafica de lambd
+	muestraGrafica(lambdas,aciertos)
 
 
 oneVsAll()
