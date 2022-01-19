@@ -93,7 +93,7 @@ def SVM():
 	
 	
 	print(f"Optimum Cs: {cOpt}")
-	print(f"Optmimum sigmas: {sOpt}")
+	print(f"Optimum sigmas: {sOpt}")
 	print(f"Average precision: {testScores/4*100}%")
 	for i, score in enumerate(scoresTotal):
 		muestraGrafica(trainValues,score,i)
