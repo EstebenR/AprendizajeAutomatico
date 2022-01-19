@@ -2,6 +2,9 @@ import numpy as np
 from pandas.io.parsers import read_csv
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 
 categories = ["E", "ET", "T", "M",]
 
@@ -10,7 +13,7 @@ def cargaDatos(file):
 	table = read_csv(file, header=0,).to_numpy()
 	X = table[:, 1:-1]
 	# Hay 7 tipos de ratings que vienen codificados con un string, asi que los codificamos como ints
-	Y = np.empty([np.shape(table)[0], 7])
+	Y = np.empty([np.shape(table)[0], 4])
 	for index, cat in enumerate(categories):
 		col = table[:, -1] == cat
 		Y[:, index] = col
@@ -22,6 +25,8 @@ def entrenamiento(X, y, xVal, yVal, trainValues):
 	scoreOpt = 0
 	svmOpt = 0
 	cOpt = 0
+	sOpt = 0
+	scores = np.empty([numTrainValues,numTrainValues])
 	for i in range(numTrainValues):
 		cVal = trainValues[i]
 		for j in range(numTrainValues):
@@ -29,13 +34,28 @@ def entrenamiento(X, y, xVal, yVal, trainValues):
 			svm = SVC(kernel='rbf', C=cVal, gamma=1/(2 * sigma**2))
 			svm.fit(X, y.ravel())
 			accuracy = accuracy_score(yVal, svm.predict(xVal))
+			scores[i,j] = accuracy
 			if(accuracy > scoreOpt):
 				svmOpt = svm
 				scoreOpt = accuracy
 				cOpt = cVal
+				sOpt = sigma
 
 
-	return svmOpt,cOpt,scoreOpt
+	return svmOpt,cOpt,sOpt,scoreOpt,scores
+
+
+def muestraGrafica(X, Y, val):
+	fig = plt.figure()
+	ax = fig.gca(projection='3d')
+	X, Z = np.meshgrid(X,X)
+	ax.plot_surface(X, Z, Y, cmap=cm.jet)
+	ax.set_xlabel("sigma")
+	ax.set_ylabel("C")
+	ax.set_zlabel("acertados")
+	plt.savefig(f"acertadosSVM{val}.png")
+	plt.clf()
+
 
 def SVM():
 	X, Y = cargaDatos('Video_games_esrb_rating.csv')
@@ -55,14 +75,17 @@ def SVM():
 
 	svmOpt = []
 	cOpt = []
+	sOpt = []
 	scoreOpt = []
+	scoresTotal = []
 	
 	for i in range(4):
-		_svmOpt, _cOpt, _scoreOpt = entrenamiento(trainX, trainY[:,i], validateX, validateY[:,i], trainValues)
+		_svmOpt, _cOpt, _sOpt, _scoreOpt, scores = entrenamiento(trainX, trainY[:,i], validateX, validateY[:,i], trainValues)
 		svmOpt.append(_svmOpt)
 		cOpt.append(_cOpt)
+		sOpt.append(_sOpt)
 		scoreOpt.append(_scoreOpt)
-	
+		scoresTotal.append(scores)
 
 	testScores = 0
 	for i in range(4):
@@ -70,7 +93,9 @@ def SVM():
 	
 	
 	print(f"Optimum Cs: {cOpt}")
-	#print(f"Error: {1-scoreOpt}")
-	print(f"Average recision: {testScores/7*100}%")
+	print(f"Optmimum sigmas: {sOpt}")
+	print(f"Average precision: {testScores/4*100}%")
+	for i, score in enumerate(scoresTotal):
+		muestraGrafica(trainValues,score,i)
 
 SVM()

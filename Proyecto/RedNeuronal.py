@@ -2,14 +2,14 @@ import numpy as np
 from pandas.io.parsers import read_csv
 from scipy import optimize
 
-categories = ["RP", "EC", "E", "ET", "T", "M", "A"]
+categories = ["E", "ET", "T", "M"]
 
 
-def cargaDatos():
-	table = read_csv('Video_games_esrb_rating.csv', header=0,).to_numpy()
+def cargaDatos(file):
+	table = read_csv(file, header=0,).to_numpy()
 	X = table[:, 1:-1]
 	# Hay 7 tipos de ratings que vienen codificados con un string, asi que los codificamos como ints
-	Y = np.empty([np.shape(table)[0], 7])
+	Y = np.empty([np.shape(table)[0], 4])
 	for index, cat in enumerate(categories):
 		col = table[:, -1] == cat
 		Y[:, index] = col
@@ -81,10 +81,11 @@ def backprop(params_rn, num_entradas, num_ocultas, num_etiquetas, X, y, reg):
 	return costeRegularizado(X,y,Theta1,Theta2,reg), np.concatenate([np.ravel(gradiente1),np.ravel(gradiente2)])
 
 def main():
-	X, Y = cargaDatos()
+	X, Y = cargaDatos('Video_games_esrb_rating.csv')
+	testX, testY = cargaDatos('test_esrb.csv')
 	
 	num_ocultas = 25
-	num_etiquetas = 7
+	num_etiquetas = 4
 	num_entradas = np.shape(X)[1]
 	
 	epsilon = 0.12
@@ -96,13 +97,10 @@ def main():
 	Theta1 = np.reshape(res.x[:num_ocultas * (num_entradas + 1)] , (num_ocultas, (num_entradas+1)))
 	Theta2 = np.reshape(res.x[num_ocultas * (num_entradas + 1):] , (num_etiquetas, (num_ocultas+1)))
 	
-	alpha3 = propagacion(X,Theta1,Theta2)[2]
+	alpha3 = propagacion(testX,Theta1,Theta2)[2]
 
 	maxIndices = np.argmax(alpha3,axis=1)
-	maxIndices = maxIndices
-	acertados = np.sum(maxIndices==np.where(Y[:] == 1))
+	acertados = np.sum(maxIndices==np.where(testY[:] == 1))
 	print(f"Porcentaje de valores que han sido correctamente clasificados: {acertados*100/np.shape(alpha3)[0]:.3f}%")
-
-	#TODO probar varios regularizadores
 
 main()
